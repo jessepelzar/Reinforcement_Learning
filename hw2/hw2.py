@@ -1,7 +1,8 @@
 import numpy as np
-import matplotlib
-from typing import Tuple
+import matplotlib.pyplot as plt
 import random
+
+
 class Robot():
 
     def __init__(self):
@@ -23,14 +24,12 @@ class Robot():
         self.rewardWater = -10
         self.direction = {"left":False, "right":False, "up":False, "down":False}
 
-    # def next(self, curState, curAction):
-
 
     def orientToState(self):
         values = [1,2,3,4]
         probabilities = [0.05, 0.05, 0.1, 0.8]
         randomActionVal = random.choices(values, probabilities)
-        # print(randomActionVal)
+
         if self.curState == self.stateEnd:
             return self.curState
 
@@ -56,9 +55,8 @@ class Robot():
             self.curAction = list(self.direction.keys())[list(self.direction.values()).index(True)]
         elif randomActionVal[0] == 3:
             return self.curState
-        # elif randomActionVal[0] == 4:
 
-        # print("inside act", self.curAction)
+
         stateNext = self.curState
         # perform moves
         if self.curAction == "left" and stateNext % 5 != 0:
@@ -103,7 +101,6 @@ def process(actionSel, episodes = 10000):
 
     rewardData = []
     for episode in range(episodes):
-        states = []
         robot = Robot()
 
         robot.direction[actionSel(robot.curState)] = True
@@ -111,7 +108,6 @@ def process(actionSel, episodes = 10000):
             robot.curAction = actionSel(robot.curState)
             state, complete, reward = robot.processState()
             robot.steps += 1
-            states.append(state)
         rewardData.append(reward)
         # print("EPISODE", episode)
 
@@ -120,13 +116,17 @@ def process(actionSel, episodes = 10000):
     sd = np.std(rewardData)
     max = np.max(rewardData)
     min = np.min(rewardData)
+    reports = [mean, sd, max, min]
     print("mean:", mean, "sd:", sd, "max:", max, "min:", min)
+
+    return rewardData, reports
 
 def q1():
     def actionSel(state):
         direction = ["left", "right", "up", "down"]
         return random.choices(direction)[0]
-    process(actionSel)
+
+    return process(actionSel)
 
 def q3():
     # > > > > v
@@ -141,22 +141,77 @@ def q3():
                      15:"up",    16:"left",  17:"x",     18:"right", 19:"down",
                      20:"up",    21:"left",  22:"right", 23:"right", 24:"up"}
         return stateDict[state]
-    process(actionSel)
+    return process(actionSel)
 
-# def q4():
+def q4(randomP = [], optimalP = []):
+
+    dataRandom_y = sorted(randomP)
+    dataOptimal_y = sorted(optimalP)
+
+    len_y1 = len(dataRandom_y)
+    len_y2 = len(dataOptimal_y)
+
+    dataRandom_x  = np.arange(1, len_y1+1) / len_y1
+    dataOptimal_x = np.arange(1, len_y2+1) / len_y2
 
 
+    return dataRandom_x, dataRandom_y, dataOptimal_x, dataOptimal_y
+
+
+def q5(points = 0):
+
+    for episode in range(10000):
+        robot = Robot()
+        maxSteps = 19 - 8
+        robot.curState = 19
+        direction = ["left", "right", "up", "down"]
+        while not robot.complete:
+            robot.curAction = random.choices(direction)[0]
+            robot.processState()
+            robot.steps += 1
+            if robot.steps == maxSteps and robot.curState == 22:
+                points += 1
+                break
+    pr = points / 10000
+    return pr
+
+
+def plotData():
+
+    rewards1, reports1 = q1()
+    rewards2, reports2 = q3()
+    x1, y1, x2, y2 = q4(rewards1, rewards2)
+    pr_q5 = q5()
+
+    fig, ax = plt.subplots(3,1)
+    ax[0].plot(x1, y1, label="Random")
+    ax[0].plot(x2, y2, label="Optimal")
+    ax[0].legend()
+    ax[0].set_xlabel("Probability")
+    ax[0].set_ylabel("Return")
+    ax[0].set_title('Random vs Optimal Policy')
+
+    clust_data = [["Mean",reports1[0],reports2[0]],
+                  ["Standard Deviation",reports1[1],reports2[1]],
+                  ["Max",reports1[2],reports2[2]],
+                  ["Min",reports1[3],reports2[3]],
+                  ["Random Seed", 100, 100]]
+    collabel=("Report", "Random", "Optimal")
+    ax[1].axis('tight')
+    ax[1].axis('off')
+    the_table = ax[1].table(cellText=clust_data,
+                          colLabels=("Report", "Random", "Optimal"),
+                          loc='center')
+
+    ax[2].axis('tight')
+    ax[2].axis('off')
+    the_table = ax[2].table(cellText=[["Pr(S19 = 21|S8 = 18)", pr_q5]],loc='center')
+    plt.show()
+    return 0
 
 def Main():
     random.seed(100)
-    # grid = Grid()
-    print(q1())
-    print(q3())
-    # print(grid.orientToState(0, 'R'))
-    # print(np.random.uniform(0,1))
-
-
-
+    plotData()
 
 if __name__ == '__main__':
     Main()
